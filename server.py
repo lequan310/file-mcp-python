@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from typing import Annotated
+from typing import Annotated, Literal
 
 import yaml
 from fastmcp import FastMCP
@@ -67,7 +67,7 @@ mcp = FastMCP("File MCP")
 def _infer_format_from_extension(file_path: str) -> str:
     """Infer the format from file extension."""
     ext_to_format = {
-        ".txt": "txt",
+        ".txt": "plain",
         ".html": "html",
         ".htm": "html",
         ".md": "markdown",
@@ -295,7 +295,27 @@ def _prepare_conversion_args(
 
     # Handle PDF-specific conversion if needed
     if output_format == "pdf":
-        extra_args.extend(["--pdf-engine=xelatex", "-V", "geometry:margin=1in"])
+        # Try to find LaTeX engine
+        latex_engines = ["xelatex", "pdflatex", "lualatex"]
+        engine_found = None
+
+        for engine in latex_engines:
+            try:
+                import shutil
+
+                if shutil.which(engine):
+                    engine_found = engine
+                    break
+            except Exception:
+                continue
+
+        if not engine_found:
+            raise ValueError(
+                "PDF generation requires a LaTeX engine (xelatex, pdflatex, or lualatex). "
+                "Please install MiKTeX (https://miktex.org/) and ensure it's in your PATH."
+            )
+
+        extra_args.extend([f"--pdf-engine={engine_found}", "-V", "geometry:margin=1in"])
 
     # Handle reference doc for docx format
     if reference_doc and output_format == "docx":
@@ -346,7 +366,7 @@ async def create_file(
         "Example: 'D:/documents/story.pdf' or '/home/user/report.docx'. ",
     ],
     input_format: Annotated[
-        str,
+        Literal["markdown", "html"],
         "Source format of the content. Supported: 'markdown', 'html'",
     ],
     reference_doc: Annotated[
@@ -431,10 +451,6 @@ async def convert_file(
         str,
         "Complete path to the input file to convert. Must be an existing file.",
     ],
-    input_format: Annotated[
-        str,
-        "Source format of the input file. Supported: txt, html, markdown, ipynb, odt, pdf, docx, rst, latex, epub",
-    ],
     output_file: Annotated[
         str,
         "Complete path where to save the converted file including extension. "
@@ -458,13 +474,11 @@ async def convert_file(
     """Convert an existing file from one format to another.
 
     Use this tool to convert documents between different formats.
-    The output format is automatically determined from the output file extension."""
+    Both input and output formats are automatically determined from the file extensions.
+    """
     # Validate required parameters
     if not input_file:
         raise ValueError("input_file is required")
-
-    if not input_format:
-        raise ValueError("input_format is required")
 
     if not output_file:
         raise ValueError("output_file is required")
@@ -472,6 +486,9 @@ async def convert_file(
     # Validate input file exists
     if not os.path.exists(input_file):
         raise ValueError(f"Input file not found: {input_file}")
+
+    # Infer input format from file extension
+    input_format = _infer_format_from_extension(input_file)
 
     # Infer output format from file extension
     output_format = _infer_format_from_extension(output_file)
