@@ -1,0 +1,19 @@
+[project]
+name = "file-mcp"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastmcp>=2.13.0.2",
+    "pypandoc-binary>=1.15",
+    "pyyaml>=6.0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.3",
+]
+
+[tool.uv]
+link-mode = "copy"
