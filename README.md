@@ -92,8 +92,7 @@ create_file(
 Convert an existing file from one format to another.
 
 **Parameters:**
-- `input_file` (str): Complete path to the input file to convert
-- `input_format` (str): Source format (txt, html, markdown, ipynb, odt, pdf, docx, rst, latex, epub)
+- `input_file` (str): Complete path to the input file to convert (including extension)
 - `output_file` (str): Complete path where to save the converted file (including extension)
 - `reference_doc` (str, optional): Path to a reference DOCX file for styling (docx output only)
 - `filters` (list[str], optional): List of Pandoc filter paths to apply
